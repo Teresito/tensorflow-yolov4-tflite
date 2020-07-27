@@ -35,6 +35,7 @@ def main(_argv):
     print("Video from: ", video_path )
     vid = cv2.VideoCapture(video_path)
 
+    # Flag configuration
     if FLAGS.framework == 'tflite':
         interpreter = tf.lite.Interpreter(model_path=FLAGS.weights)
         interpreter.allocate_tensors()
@@ -46,19 +47,26 @@ def main(_argv):
         saved_model_loaded = tf.saved_model.load(FLAGS.weights, tags=[tag_constants.SERVING])
         infer = saved_model_loaded.signatures['serving_default']
 
-    while True:
+    frame_time = 0
+    frame_count = 0
+    frame_min = 10000 
+    frame_max = 0
+    while vid.isOpened():
         return_value, frame = vid.read()
-        if return_value:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            image = Image.fromarray(frame)
-        else:
-            raise ValueError("No image! Try with another video format")
+
+        if not return_value:
+            print("Reached end of video")
+            break
+
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(frame)
         frame_size = frame.shape[:2]
         image_data = cv2.resize(frame, (input_size, input_size))
         image_data = image_data / 255.
         image_data = image_data[np.newaxis, ...].astype(np.float32)
         prev_time = time.time()
 
+        # Flag execution
         if FLAGS.framework == 'tflite':
             interpreter.set_tensor(input_details[0]['index'], image_data)
             interpreter.invoke()
@@ -90,12 +98,25 @@ def main(_argv):
         curr_time = time.time()
         exec_time = curr_time - prev_time
         result = np.asarray(image)
-        info = "time: %.2f ms" %(1000*exec_time)
-        print(info)
-        cv2.namedWindow("result", cv2.WINDOW_AUTOSIZE)
-        result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        cv2.imshow("result", result)
+        
+        fps = 1/exec_time
+        frame_time = frame_time + fps
+        frame_count = frame_count + 1
+
+        if frame_min > fps:
+            frame_min = fps
+
+        if frame_max < fps:
+            frame_max = fps
+
+
+        # cv2.namedWindow("result", cv2.WINDOW_AUTOSIZE)
+        # result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # cv2.imshow("result", result)
         if cv2.waitKey(1) & 0xFF == ord('q'): break
+
+
+    print("AVG: {:.2f} MIN: {:.2f} MAX: {:.2f}".format(frame_time/frame_count,frame_min,frame_max))
 
 if __name__ == '__main__':
     try:
