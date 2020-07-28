@@ -13,6 +13,7 @@ import cv2
 import numpy as np
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
+import os
 
 flags.DEFINE_string('framework', 'tf', '(tf, tflite, trt')
 flags.DEFINE_string('weights', './checkpoints/yolov4-416',
@@ -23,6 +24,7 @@ flags.DEFINE_string('model', 'yolov4', 'yolov3 or yolov4')
 flags.DEFINE_string('video', './data/road.mp4', 'path to input video')
 flags.DEFINE_float('iou', 0.45, 'iou threshold')
 flags.DEFINE_float('score', 0.25, 'score threshold')
+flags.DEFINE_boolean('show',False,'show video')
 
 def main(_argv):
     config = ConfigProto()
@@ -109,17 +111,20 @@ def main(_argv):
         if frame_max < fps:
             frame_max = fps
 
+        if FLAGS.show:
+            cv2.namedWindow("result", cv2.WINDOW_AUTOSIZE)
+            result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            cv2.imshow("result", result)
 
-        # cv2.namedWindow("result", cv2.WINDOW_AUTOSIZE)
-        # result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        # cv2.imshow("result", result)
+        
         if cv2.waitKey(1) & 0xFF == ord('q'): break
-
+    
 
     print("AVG: {:.2f} MIN: {:.2f} MAX: {:.2f}".format(frame_time/frame_count,frame_min,frame_max))
-
 if __name__ == '__main__':
     try:
         app.run(main)
+
     except SystemExit:
         pass
+

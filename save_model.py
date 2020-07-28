@@ -12,10 +12,11 @@ flags.DEFINE_integer('input_size', 416, 'define input size of export model')
 flags.DEFINE_float('score_thres', 0.2, 'define score threshold')
 flags.DEFINE_string('framework', 'tf', 'define what framework do you want to convert (tf, trt, tflite)')
 flags.DEFINE_string('model', 'yolov4', 'yolov3 or yolov4')
+flags.DEFINE_integer('classes', 80, 'define number of classes') # Default is 80 by YOLO VOC/COO documentation? Need to verify
 
 def save_tf():
   STRIDES, ANCHORS, NUM_CLASS, XYSCALE = utils.load_config(FLAGS)
-
+  NUM_CLASS = FLAGS.classes
   input_layer = tf.keras.layers.Input([FLAGS.input_size, FLAGS.input_size, 3])
   feature_maps = YOLO(input_layer, NUM_CLASS, FLAGS.model, FLAGS.tiny)
   bbox_tensors = []
