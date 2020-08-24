@@ -24,8 +24,8 @@ flags.DEFINE_boolean('tiny', False, 'yolo or yolo-tiny')
 flags.DEFINE_string('model', 'yolov4', 'yolov3 or yolov4')
 flags.DEFINE_string('output_name',"CHANGE_ME.avi",'output video name')
 flags.DEFINE_string('video', './data/pedestrians.mp4', 'path to input video')
-flags.DEFINE_float('iou', 0.45, 'iou threshold')
-flags.DEFINE_float('score', 0.25, 'score threshold')
+flags.DEFINE_float('iou', 0.5, 'iou threshold')
+flags.DEFINE_float('score', 0.5, 'score threshold')
 flags.DEFINE_boolean('show',False,'show video')
 flags.DEFINE_boolean('output',False,'save video')
 
@@ -39,6 +39,13 @@ def main(_argv):
 
     print("Video from: ", video_path )
     vid = cv2.VideoCapture(video_path)
+
+    if not FLAGS.output and not FLAGS.show:
+        print("===============================================")
+        print("User must either save the video or show;")
+        print("===============================================")
+        return;
+
 
     # Flag configuration
     if FLAGS.framework == 'tflite':
@@ -63,13 +70,16 @@ def main(_argv):
     frame_count = 0
     frame_min = 10000 
     frame_max = 0
+    show_est = True
     while vid.isOpened():
         return_value, frame = vid.read()
         if frame_id == vid.get(cv2.CAP_PROP_FRAME_COUNT):
+            print("===============================================")
             print("Video processing complete")
+            print("===============================================")
             break
-        else:
-            print("FRAME: {} | MAX_FRAME: {}".format(frame_id,vid.get(cv2.CAP_PROP_FRAME_COUNT)))
+        # else:
+            # print("FRAME: {} | MAX_FRAME: {}".format(frame_id,vid.get(cv2.CAP_PROP_FRAME_COUNT)))
 
         if return_value:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -126,11 +136,19 @@ def main(_argv):
         if frame_max < fps:
             frame_max = fps
 
+        if show_est:
+            show_est = False
+            seconds = vid.get(cv2.CAP_PROP_FRAME_COUNT)/fps
+            print("===============================================")
+            print("Estimation: {:.2f} minutes".format(seconds/60))
+            print("===============================================")
+
         cv2.putText(frame,'FPS: {:.2f}'.format(fps),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
-        # if FLAGS.show:
-        #     cv2.namedWindow("result", cv2.WINDOW_AUTOSIZE)
-        #     result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        #     cv2.imshow("result", result)
+        cv2.putText(frame,'Threshold: {}'.format(FLAGS.score),(30,100),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
+        if FLAGS.show:
+            cv2.namedWindow("result", cv2.WINDOW_AUTOSIZE)
+            result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            cv2.imshow("result", result)
         
         if FLAGS.output:
             result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)

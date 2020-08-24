@@ -6,6 +6,8 @@ Convert YOLO v4, YOLOv3, YOLO tiny .weights to .pb, .tflite and trt format for t
 
 Download yolov4.weights file: https://drive.google.com/open?id=1cewMfusmPjYWbrnuJRuKhPMwRe_b9PaT
 
+### NOTE
+* This is a forked repository for Raspberry Pi 4B development implementation. 
 
 ### Prerequisites
 * Tensorflow 2.3.0rc0
@@ -30,14 +32,6 @@ python detect.py --weights ./checkpoints/yolov4-tiny-416 --size 416 --model yolo
 
 ```
 If you want to run yolov3 or yolov3-tiny change ``--model yolov3`` in command
-
-#### Output
-
-##### Yolov4 original weight
-<p align="center"><img src="result.png" width="640"\></p>
-
-##### Yolov4 tflite int8
-<p align="center"><img src="result-int8.png" width="640"\></p>
 
 ### Convert to tflite
 
@@ -156,20 +150,6 @@ python train.py
 python train.py --weights ./data/yolov4.weights
 ```
 The training performance is not fully reproduced yet, so I recommended to use Alex's [Darknet](https://github.com/AlexeyAB/darknet) to train your own data, then convert the .weights to tensorflow or tflite.
-
-
-
-### TODO
-* [x] Convert YOLOv4 to TensorRT
-* [x] YOLOv4 tflite on android
-* [ ] YOLOv4 tflite on ios
-* [x] Training code
-* [x] Update scale xy
-* [ ] ciou
-* [ ] Mosaic data augmentation
-* [x] Mish activation
-* [x] yolov4 tflite version
-* [x] yolov4 in8 tflite version for mobile
 
 ### References
 
