@@ -1,3 +1,4 @@
+#!/bin/bash
 # UNTRAINED YOLOV4-TINY
 if [[ ! -d ./checkpoints/yolov4-tiny ]]; then
 	python save_model.py --weights ./data/yolov4-tiny.weights --output ./checkpoints/yolov4-tiny --input_size 416 --model yolov4 --framework tflite --tiny 
