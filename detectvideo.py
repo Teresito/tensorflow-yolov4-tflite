@@ -22,10 +22,12 @@ flags.DEFINE_string('weights', './checkpoints/yolov4-416',
 flags.DEFINE_integer('size', 416, 'resize images to')
 flags.DEFINE_boolean('tiny', False, 'yolo or yolo-tiny')
 flags.DEFINE_string('model', 'yolov4', 'yolov3 or yolov4')
-flags.DEFINE_string('video', './data/road.mp4', 'path to input video')
+flags.DEFINE_string('output_name',"CHANGE_ME.avi",'output video name')
+flags.DEFINE_string('video', './data/pedestrians.mp4', 'path to input video')
 flags.DEFINE_float('iou', 0.45, 'iou threshold')
 flags.DEFINE_float('score', 0.25, 'score threshold')
 flags.DEFINE_boolean('show',False,'show video')
+flags.DEFINE_boolean('output',False,'save video')
 
 def main(_argv):
     config = ConfigProto()
@@ -44,25 +46,37 @@ def main(_argv):
         interpreter.allocate_tensors()
         input_details = interpreter.get_input_details()
         output_details = interpreter.get_output_details()
-        print(input_details)
-        print(output_details)
     else:
         saved_model_loaded = tf.saved_model.load(FLAGS.weights, tags=[tag_constants.SERVING])
         infer = saved_model_loaded.signatures['serving_default']
 
+    if FLAGS.output:
+        # by default VideoCapture returns float instead of int
+        width = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = int(vid.get(cv2.CAP_PROP_FPS))
+        codec = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter(FLAGS.output_name, codec, fps, (width, height))
+
+    frame_id = 0
     frame_time = 0
     frame_count = 0
     frame_min = 10000 
     frame_max = 0
     while vid.isOpened():
         return_value, frame = vid.read()
-
-        if not return_value:
-            print("Reached end of video")
+        if frame_id == vid.get(cv2.CAP_PROP_FRAME_COUNT):
+            print("Video processing complete")
             break
+        else:
+            print("FRAME: {} | MAX_FRAME: {}".format(frame_id,vid.get(cv2.CAP_PROP_FRAME_COUNT)))
 
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image = Image.fromarray(frame)
+        if return_value:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image = Image.fromarray(frame)
+        else:
+            raise ValueError("No image! Try with another video format")
+
         frame_size = frame.shape[:2]
         image_data = cv2.resize(frame, (input_size, input_size))
         image_data = image_data / 255.
@@ -112,11 +126,17 @@ def main(_argv):
         if frame_max < fps:
             frame_max = fps
 
-        if FLAGS.show:
-            cv2.namedWindow("result", cv2.WINDOW_AUTOSIZE)
+        cv2.putText(frame,'FPS: {:.2f}'.format(fps),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
+        # if FLAGS.show:
+        #     cv2.namedWindow("result", cv2.WINDOW_AUTOSIZE)
+        #     result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        #     cv2.imshow("result", result)
+        
+        if FLAGS.output:
             result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            cv2.imshow("result", result)
+            out.write(result)
 
+        frame_id += 1
         
         if cv2.waitKey(1) & 0xFF == ord('q'): break
     
